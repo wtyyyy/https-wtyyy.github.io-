@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>DeepSeek 多会话助手 - 可自定义助手名称</title>
+    <title>DeepSeek 多会话助手 - 标签页版</title>
     <style>
         * {
             box-sizing: border-box;
@@ -43,16 +43,22 @@
             }
         }
 
-        /* 顶部工具栏 */
+        /* 顶部工具栏 - 两行结构 */
         .toolbar {
             background: #ffffff;
             border-bottom: 1px solid #e9ecef;
-            padding: 10px 16px;
             display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 10px;
+            flex-direction: column;
             z-index: 10;
+        }
+
+        /* 第一行：菜单按钮、API Key、清空等 */
+        .toolbar-row {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .menu-btn {
@@ -63,26 +69,6 @@
             font-size: 18px;
             cursor: pointer;
             font-weight: bold;
-        }
-
-        .session-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex: 1;
-            min-width: 120px;
-        }
-
-        .session-name {
-            font-weight: 500;
-            background: #f0f2f5;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 14px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 150px;
         }
 
         .btn-icon {
@@ -109,12 +95,81 @@
             background: #d9363e;
         }
 
-        /* 左侧侧边栏 */
+        /* 第二行：会话标签栏（横向滚动） */
+        .session-tabs {
+            display: flex;
+            overflow-x: auto;
+            white-space: nowrap;
+            padding: 8px 12px;
+            gap: 8px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            scrollbar-width: thin;
+        }
+        .session-tabs::-webkit-scrollbar {
+            height: 4px;
+        }
+        .session-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: white;
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #e9ecef;
+            flex-shrink: 0;
+        }
+        .session-tab.active {
+            background: #0084ff;
+            color: white;
+            border-color: #0084ff;
+        }
+        .session-tab .tab-name {
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .session-tab .tab-delete {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 0 2px;
+            color: inherit;
+            opacity: 0.6;
+            display: inline-flex;
+            align-items: center;
+        }
+        .session-tab .tab-delete:active {
+            opacity: 1;
+        }
+        .session-tab.active .tab-delete {
+            color: white;
+        }
+        .new-tab-btn {
+            background: #e9ecef;
+            border: none;
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* 左侧侧边栏 (保持不变) */
         .sidebar {
             position: fixed;
-            left: -300px;
+            left: -320px;
             top: 0;
-            width: 300px;
+            width: 320px;
             height: 100%;
             background: white;
             box-shadow: 2px 0 12px rgba(0,0,0,0.15);
@@ -126,11 +181,9 @@
             gap: 20px;
             overflow-y: auto;
         }
-
         .sidebar.open {
             left: 0;
         }
-
         .sidebar-header {
             display: flex;
             justify-content: space-between;
@@ -140,7 +193,6 @@
             padding-bottom: 12px;
             border-bottom: 1px solid #e9ecef;
         }
-
         .close-sidebar {
             background: none;
             border: none;
@@ -148,13 +200,11 @@
             cursor: pointer;
             color: #6c757d;
         }
-
         .setting-item {
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
-
         .setting-label {
             font-weight: 500;
             font-size: 14px;
@@ -162,7 +212,6 @@
             align-items: center;
             gap: 8px;
         }
-
         .toggle-switch {
             position: relative;
             display: inline-block;
@@ -202,13 +251,11 @@
         input:checked + .slider:before {
             transform: translateX(20px);
         }
-
         .setting-input {
             display: flex;
             align-items: center;
             gap: 12px;
         }
-
         input[type="range"] {
             flex: 1;
             height: 4px;
@@ -216,11 +263,9 @@
             background: #dee2e6;
             border-radius: 2px;
         }
-
         input[type="range"]:focus {
             outline: none;
         }
-
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             width: 16px;
@@ -229,15 +274,18 @@
             background: #0084ff;
             cursor: pointer;
         }
-
-        .number-input, .text-input {
+        .number-input, .text-input, .select-input, .system-prompt-input {
             width: 100%;
             padding: 8px 12px;
             border: 1px solid #ced4da;
             border-radius: 8px;
             font-size: 14px;
         }
-
+        .system-prompt-input {
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+        }
         .sidebar-overlay {
             position: fixed;
             top: 0;
@@ -248,74 +296,8 @@
             z-index: 999;
             display: none;
         }
-
         .sidebar-overlay.show {
             display: block;
-        }
-
-        /* 会话下拉面板 */
-        .session-panel {
-            position: absolute;
-            top: 60px;
-            left: 16px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            width: 260px;
-            max-height: 300px;
-            overflow-y: auto;
-            z-index: 20;
-            display: none;
-            flex-direction: column;
-            border: 1px solid #e9ecef;
-        }
-
-        .session-panel.show {
-            display: flex;
-        }
-
-        .session-item {
-            padding: 10px 12px;
-            border-bottom: 1px solid #f0f2f5;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        .session-item.active {
-            background: #e7f3ff;
-        }
-
-        .session-title {
-            flex: 1;
-            font-size: 14px;
-            cursor: pointer;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .session-title:hover {
-            text-decoration: underline;
-            color: #0084ff;
-        }
-
-        .delete-session, .edit-session {
-            background: none;
-            border: none;
-            font-size: 16px;
-            cursor: pointer;
-            padding: 0 6px;
-            color: #6c757d;
-        }
-
-        .delete-session:hover {
-            color: #ff4d4f;
-        }
-
-        .edit-session:hover {
-            color: #0084ff;
         }
 
         /* 聊天消息区域 */
@@ -328,21 +310,17 @@
             gap: 16px;
             background: #ffffff;
         }
-
         .message {
             display: flex;
             flex-direction: column;
             max-width: 85%;
         }
-
         .user-message {
             align-self: flex-end;
         }
-
         .assistant-message {
             align-self: flex-start;
         }
-
         .message-bubble {
             padding: 12px 16px;
             border-radius: 20px;
@@ -351,26 +329,22 @@
             font-size: 15px;
             position: relative;
         }
-
         .user-message .message-bubble {
             background: #0084ff;
             color: white;
             border-bottom-right-radius: 4px;
         }
-
         .assistant-message .message-bubble {
             background: #f0f2f5;
             color: #1a1a1a;
             border-bottom-left-radius: 4px;
         }
-
         .message-role {
             font-size: 12px;
             margin-bottom: 4px;
             margin-left: 8px;
             color: #6c757d;
         }
-
         .message-meta {
             font-size: 10px;
             color: #8c8f92;
@@ -380,7 +354,6 @@
             gap: 12px;
             flex-wrap: wrap;
         }
-
         .loading-indicator {
             display: flex;
             align-items: center;
@@ -392,7 +365,6 @@
             font-size: 14px;
             color: #6c757d;
         }
-
         .dot {
             width: 8px;
             height: 8px;
@@ -401,12 +373,10 @@
             display: inline-block;
             animation: pulse 1.2s infinite ease-in-out;
         }
-
         @keyframes pulse {
             0%, 100% { opacity: 0.3; transform: scale(0.8); }
             50% { opacity: 1; transform: scale(1.2); }
         }
-
         .input-area {
             padding: 12px 16px;
             border-top: 1px solid #e9ecef;
@@ -415,7 +385,6 @@
             gap: 12px;
             align-items: flex-end;
         }
-
         textarea {
             flex: 1;
             border: 1px solid #dee2e6;
@@ -427,11 +396,9 @@
             outline: none;
             max-height: 120px;
         }
-
         textarea:focus {
             border-color: #0084ff;
         }
-
         button {
             background: #0084ff;
             color: white;
@@ -444,16 +411,13 @@
             transition: background 0.2s;
             height: 44px;
         }
-
         button:active {
             background: #0066cc;
         }
-
         button:disabled {
             background: #b0c4de;
             cursor: not-allowed;
         }
-
         .scroll-to-bottom {
             position: absolute;
             bottom: 80px;
@@ -470,11 +434,9 @@
             z-index: 15;
             transition: transform 0.2s;
         }
-
         .scroll-to-bottom:active {
             transform: scale(0.95);
         }
-
         .scroll-to-bottom svg {
             fill: white;
             width: 24px;
@@ -486,29 +448,49 @@
 <div class="app-container">
     <!-- 顶部工具栏 -->
     <div class="toolbar">
-        <button id="menuBtn" class="menu-btn">☰</button>
-        <div class="session-info">
-            <button id="sessionsBtn" class="btn-icon">📁 会话</button>
-            <span id="currentSessionName" class="session-name">对话1</span>
+        <div class="toolbar-row">
+            <button id="menuBtn" class="menu-btn">☰</button>
+            <button id="modifyApiKeyBtn" class="btn-icon">🔑 API Key</button>
+            <button id="clearChatBtn" class="btn-icon btn-danger">🗑️ 清空</button>
         </div>
-        <button id="newSessionBtn" class="btn-icon">➕ 新建</button>
-        <button id="modifyApiKeyBtn" class="btn-icon">🔑 API Key</button>
-        <button id="clearChatBtn" class="btn-icon btn-danger">🗑️ 清空</button>
+        <div class="session-tabs" id="sessionTabs">
+            <!-- 动态生成会话标签 -->
+        </div>
     </div>
 
-    <!-- 左侧侧边栏 -->
+    <!-- 左侧侧边栏（同前） -->
     <div id="sidebar" class="sidebar">
         <div class="sidebar-header">
             <span>⚙️ 高级参数</span>
             <button id="closeSidebarBtn" class="close-sidebar">✕</button>
         </div>
+        <!-- 全局系统提示词 -->
+        <div class="setting-item">
+            <div class="setting-label">
+                <span>📋 全局系统提示词</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="enableSystemPromptToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <textarea id="systemPromptInput" class="system-prompt-input" placeholder="例如：你是一个专业的编程助手，请用简洁专业的中文回答。" rows="4"></textarea>
+            <div style="font-size:12px; color:#6c757d">启用后，所有会话都会遵循这个指令。</div>
+        </div>
+        <!-- 模型选择 -->
+        <div class="setting-item">
+            <div class="setting-label">🤖 选择模型</div>
+            <select id="modelSelect" class="select-input">
+                <option value="deepseek-chat">DeepSeek-Chat (V2)</option>
+               <option value="deepseek-chat">DeepSeek-V3.2 (推荐)</option>
+               <option value="deepseek-reasoner">DeepSeek-R1 (推理模型)</option>
+            </select>
+        </div>
         <!-- 自定义助手名称 -->
         <div class="setting-item">
-            <div class="setting-label">🤖 助手显示名称</div>
+            <div class="setting-label">🏷️ 助手显示名称</div>
             <input type="text" id="assistantNameInput" class="text-input" placeholder="例如：小助手、AI伙伴" value="DeepSeek">
-            <div style="font-size:12px; color:#6c757d">修改后立即生效，所有历史消息也会更新</div>
         </div>
-        <!-- 原有参数 -->
+        <!-- 参数 -->
         <div class="setting-item">
             <div class="setting-label">📝 上下文消息数量上限</div>
             <div class="setting-input">
@@ -530,7 +512,6 @@
                 <input type="number" id="topPNum" class="number-input" min="0" max="1" step="0.01">
             </div>
         </div>
-        <!-- 新增开关 -->
         <div class="setting-item">
             <div class="setting-label">
                 <span>🌊 流式输出 (Stream)</span>
@@ -539,7 +520,6 @@
                     <span class="slider"></span>
                 </label>
             </div>
-            <div style="font-size:12px; color:#6c757d">逐字显示回复，体验更流畅</div>
         </div>
         <div class="setting-item">
             <div class="setting-label">
@@ -558,7 +538,6 @@
                     <span class="slider"></span>
                 </label>
             </div>
-            <div style="font-size:12px; color:#6c757d">仅非流式模式有效</div>
         </div>
         <div class="setting-item">
             <div class="setting-label">
@@ -571,9 +550,6 @@
         </div>
     </div>
     <div id="sidebarOverlay" class="sidebar-overlay"></div>
-
-    <!-- 会话下拉面板 -->
-    <div id="sessionPanel" class="session-panel"></div>
 
     <!-- 聊天消息容器 -->
     <div id="chatMessages" class="chat-messages"></div>
@@ -594,7 +570,7 @@
 
 <script>
     // ---------- 会话管理 ----------
-    let sessions = [];        // [{ id, name, messages }]
+    let sessions = [];
     let currentSessionId = null;
     let apiKey = localStorage.getItem('deepseek_api_key') || '';
     let isLoading = false;
@@ -607,23 +583,23 @@
     let showWordCount = false;
     let showToken = false;
     let showTimestamp = false;
-    let assistantName = "DeepSeek";   // 自定义助手名称
+    let assistantName = "DeepSeek";
+    let selectedModel = "deepseek-chat";
+    let systemPromptEnabled = false;
+    let systemPrompt = "你是一个有用的智能助手，请用中文回答用户的问题。";
 
     // DOM 元素
     const chatMessagesDiv = document.getElementById('chatMessages');
     const userInput = document.getElementById('userInput');
     const sendBtn = document.getElementById('sendBtn');
-    const sessionsBtn = document.getElementById('sessionsBtn');
-    const sessionPanel = document.getElementById('sessionPanel');
-    const newSessionBtn = document.getElementById('newSessionBtn');
     const modifyApiKeyBtn = document.getElementById('modifyApiKeyBtn');
     const clearChatBtn = document.getElementById('clearChatBtn');
-    const currentSessionNameSpan = document.getElementById('currentSessionName');
     const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
     const menuBtn = document.getElementById('menuBtn');
     const sidebar = document.getElementById('sidebar');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
     const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+    const sessionTabsDiv = document.getElementById('sessionTabs');
 
     // 参数输入元素
     const contextLimitRange = document.getElementById('contextLimit');
@@ -637,6 +613,9 @@
     const tokenToggle = document.getElementById('tokenToggle');
     const timestampToggle = document.getElementById('timestampToggle');
     const assistantNameInput = document.getElementById('assistantNameInput');
+    const modelSelect = document.getElementById('modelSelect');
+    const enableSystemPromptToggle = document.getElementById('enableSystemPromptToggle');
+    const systemPromptInput = document.getElementById('systemPromptInput');
 
     // ---------- 参数加载与保存 ----------
     function loadParams() {
@@ -655,12 +634,15 @@
         const savedTimestamp = localStorage.getItem('deepseek_show_timestamp');
         if (savedTimestamp !== null) showTimestamp = savedTimestamp === 'true';
         const savedAssistantName = localStorage.getItem('deepseek_assistant_name');
-        if (savedAssistantName !== null && savedAssistantName.trim() !== '') {
-            assistantName = savedAssistantName;
-        } else {
-            assistantName = "DeepSeek";
-        }
+        if (savedAssistantName !== null && savedAssistantName.trim() !== '') assistantName = savedAssistantName;
+        const savedModel = localStorage.getItem('deepseek_model');
+        if (savedModel !== null) selectedModel = savedModel;
+        const savedSysPromptEnabled = localStorage.getItem('deepseek_system_prompt_enabled');
+        if (savedSysPromptEnabled !== null) systemPromptEnabled = savedSysPromptEnabled === 'true';
+        const savedSysPrompt = localStorage.getItem('deepseek_system_prompt');
+        if (savedSysPrompt !== null && savedSysPrompt.trim() !== '') systemPrompt = savedSysPrompt;
 
+        // 更新UI
         contextLimitRange.value = contextLimit;
         contextLimitNum.value = contextLimit;
         temperatureRange.value = temperature;
@@ -672,6 +654,9 @@
         tokenToggle.checked = showToken;
         timestampToggle.checked = showTimestamp;
         assistantNameInput.value = assistantName;
+        modelSelect.value = selectedModel;
+        enableSystemPromptToggle.checked = systemPromptEnabled;
+        systemPromptInput.value = systemPrompt;
     }
 
     function saveParams() {
@@ -683,6 +668,9 @@
         localStorage.setItem('deepseek_show_token', showToken);
         localStorage.setItem('deepseek_show_timestamp', showTimestamp);
         localStorage.setItem('deepseek_assistant_name', assistantName);
+        localStorage.setItem('deepseek_model', selectedModel);
+        localStorage.setItem('deepseek_system_prompt_enabled', systemPromptEnabled);
+        localStorage.setItem('deepseek_system_prompt', systemPrompt);
     }
 
     function updateParamFromUI() {
@@ -697,98 +685,24 @@
         showToken = tokenToggle.checked;
         showTimestamp = timestampToggle.checked;
         const newName = assistantNameInput.value.trim();
-        if (newName !== "") {
-            assistantName = newName;
-        } else {
-            assistantName = "DeepSeek";
-            assistantNameInput.value = "DeepSeek";
-        }
+        assistantName = newName !== "" ? newName : "DeepSeek";
+        assistantNameInput.value = assistantName;
+        selectedModel = modelSelect.value;
+        systemPromptEnabled = enableSystemPromptToggle.checked;
+        const newPrompt = systemPromptInput.value.trim();
+        systemPrompt = newPrompt !== "" ? newPrompt : "你是一个有用的智能助手，请用中文回答用户的问题。";
+        systemPromptInput.value = systemPrompt;
         saveParams();
-        // 刷新所有消息的角色名称
         refreshAllMessagesRoleName();
+        refreshAllMessagesMeta();
     }
 
-    // 刷新所有消息的显示角色名（用于助手名称修改后）
     function refreshAllMessagesRoleName() {
-        const messages = document.querySelectorAll('.message');
-        messages.forEach(msgEl => {
-            const roleDiv = msgEl.querySelector('.message-role');
-            if (!roleDiv) return;
-            const isAssistant = msgEl.classList.contains('assistant-message');
-            if (isAssistant) {
-                roleDiv.innerText = assistantName;
-            }
-        });
+        document.querySelectorAll('.message.assistant-message .message-role').forEach(el => el.innerText = assistantName);
     }
 
-    function bindParamEvents() {
-        contextLimitRange.addEventListener('input', () => {
-            contextLimit = parseInt(contextLimitRange.value);
-            contextLimitNum.value = contextLimit;
-            saveParams();
-        });
-        contextLimitNum.addEventListener('change', () => {
-            let val = parseInt(contextLimitNum.value);
-            if (isNaN(val)) val = 20;
-            val = Math.min(50, Math.max(1, val));
-            contextLimit = val;
-            contextLimitRange.value = val;
-            saveParams();
-        });
-        temperatureRange.addEventListener('input', () => {
-            temperature = parseFloat(temperatureRange.value);
-            temperatureNum.value = temperature;
-            saveParams();
-        });
-        temperatureNum.addEventListener('change', () => {
-            let val = parseFloat(temperatureNum.value);
-            if (isNaN(val)) val = 0.7;
-            val = Math.min(2, Math.max(0, val));
-            temperature = val;
-            temperatureRange.value = val;
-            saveParams();
-        });
-        topPRange.addEventListener('input', () => {
-            topP = parseFloat(topPRange.value);
-            topPNum.value = topP;
-            saveParams();
-        });
-        topPNum.addEventListener('change', () => {
-            let val = parseFloat(topPNum.value);
-            if (isNaN(val)) val = 1;
-            val = Math.min(1, Math.max(0, val));
-            topP = val;
-            topPRange.value = val;
-            saveParams();
-        });
-        streamToggle.addEventListener('change', () => {
-            streamEnabled = streamToggle.checked;
-            saveParams();
-        });
-        wordCountToggle.addEventListener('change', () => {
-            showWordCount = wordCountToggle.checked;
-            saveParams();
-            refreshAllMessagesMeta();
-        });
-        tokenToggle.addEventListener('change', () => {
-            showToken = tokenToggle.checked;
-            saveParams();
-            refreshAllMessagesMeta();
-        });
-        timestampToggle.addEventListener('change', () => {
-            showTimestamp = timestampToggle.checked;
-            saveParams();
-            refreshAllMessagesMeta();
-        });
-        assistantNameInput.addEventListener('change', () => {
-            updateParamFromUI();
-        });
-    }
-
-    // 刷新所有消息的元数据（用于开关切换后）
     function refreshAllMessagesMeta() {
-        const messages = document.querySelectorAll('.message');
-        messages.forEach(msgEl => {
+        document.querySelectorAll('.message').forEach(msgEl => {
             const role = msgEl.classList.contains('user-message') ? 'user' : 'assistant';
             const bubble = msgEl.querySelector('.message-bubble');
             const content = bubble.innerText;
@@ -801,31 +715,16 @@
         });
     }
 
-    // 辅助：计算字数（中英文都算一个字符）
-    function getWordCount(text) {
-        return text.length;
-    }
-
-    // 辅助：格式化时间戳
+    function getWordCount(text) { return text.length; }
     function formatTimestamp() {
         const now = new Date();
         return `${now.getMonth()+1}/${now.getDate()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
     }
-
-    // 构建消息元数据HTML
     function buildMetaElement(role, content, timestamp = null, tokenCount = null) {
         const parts = [];
-        if (showWordCount) {
-            const count = getWordCount(content);
-            parts.push(`📝 ${count} 字`);
-        }
-        if (showToken && tokenCount !== null && role === 'assistant') {
-            parts.push(`🔢 ${tokenCount} tokens`);
-        }
-        if (showTimestamp) {
-            const ts = timestamp || formatTimestamp();
-            parts.push(`🕒 ${ts}`);
-        }
+        if (showWordCount) parts.push(`📝 ${getWordCount(content)} 字`);
+        if (showToken && tokenCount !== null && role === 'assistant') parts.push(`🔢 ${tokenCount} tokens`);
+        if (showTimestamp) parts.push(`🕒 ${timestamp || formatTimestamp()}`);
         if (parts.length === 0) return null;
         const metaDiv = document.createElement('div');
         metaDiv.className = 'message-meta';
@@ -837,7 +736,7 @@
     function openSidebar() { sidebar.classList.add('open'); sidebarOverlay.classList.add('show'); }
     function closeSidebar() { sidebar.classList.remove('open'); sidebarOverlay.classList.remove('show'); }
 
-    // ---------- 会话管理函数 ----------
+    // ---------- 会话管理核心函数 ----------
     function generateId() { return Date.now() + '-' + Math.random().toString(36).substr(2, 8); }
 
     function getNextSessionName() {
@@ -862,9 +761,8 @@
                 }
             } catch(e) { createDefaultSession(); }
         } else { createDefaultSession(); }
-        renderSessionPanel();
+        renderSessionTabs();
         loadCurrentSessionMessages();
-        updateSessionNameDisplay();
     }
 
     function createDefaultSession() {
@@ -939,67 +837,101 @@
         }
     }
 
-    function renderSessionPanel() { 
-        sessionPanel.innerHTML = '';
+    // 渲染顶部标签页
+    function renderSessionTabs() {
+        sessionTabsDiv.innerHTML = '';
         sessions.forEach(session => {
-            const item = document.createElement('div');
-            item.className = 'session-item' + (session.id === currentSessionId ? ' active' : '');
-            const titleSpan = document.createElement('span');
-            titleSpan.className = 'session-title';
-            titleSpan.textContent = session.name;
-            titleSpan.addEventListener('click', (e) => { e.stopPropagation(); editSessionName(session.id); });
-            const editBtn = document.createElement('button');
-            editBtn.className = 'edit-session';
-            editBtn.textContent = '✎';
-            editBtn.addEventListener('click', (e) => { e.stopPropagation(); editSessionName(session.id); });
+            const tab = document.createElement('div');
+            tab.className = 'session-tab' + (session.id === currentSessionId ? ' active' : '');
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'tab-name';
+            nameSpan.innerText = session.name;
             const delBtn = document.createElement('button');
-            delBtn.className = 'delete-session';
-            delBtn.textContent = '✕';
-            delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteSession(session.id); });
-            const actionsDiv = document.createElement('div');
-            actionsDiv.appendChild(editBtn); actionsDiv.appendChild(delBtn);
-            item.appendChild(titleSpan); item.appendChild(actionsDiv);
-            item.addEventListener('click', (e) => {
-                if (e.target === titleSpan || e.target === editBtn || e.target === delBtn) return;
-                switchToSession(session.id);
-                sessionPanel.classList.remove('show');
+            delBtn.className = 'tab-delete';
+            delBtn.innerHTML = '✕';
+            delBtn.title = '删除会话';
+            delBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteSession(session.id);
             });
-            sessionPanel.appendChild(item);
+            tab.appendChild(nameSpan);
+            tab.appendChild(delBtn);
+            // 点击标签切换会话
+            tab.addEventListener('click', (e) => {
+                if (e.target === delBtn) return;
+                switchToSession(session.id);
+            });
+            // 长按标签修改名称
+            let pressTimer;
+            tab.addEventListener('touchstart', (e) => {
+                pressTimer = setTimeout(() => {
+                    editSessionName(session.id);
+                }, 500);
+            });
+            tab.addEventListener('touchend', () => clearTimeout(pressTimer));
+            tab.addEventListener('touchmove', () => clearTimeout(pressTimer));
+            // 鼠标事件（用于调试）
+            tab.addEventListener('mousedown', (e) => {
+                pressTimer = setTimeout(() => {
+                    editSessionName(session.id);
+                }, 500);
+            });
+            tab.addEventListener('mouseup', () => clearTimeout(pressTimer));
+            tab.addEventListener('mouseleave', () => clearTimeout(pressTimer));
+            sessionTabsDiv.appendChild(tab);
         });
+        // 添加“新建”按钮
+        const newBtn = document.createElement('button');
+        newBtn.className = 'new-tab-btn';
+        newBtn.innerHTML = '+ 新建';
+        newBtn.addEventListener('click', () => createNewSession());
+        sessionTabsDiv.appendChild(newBtn);
     }
-    function editSessionName(sessionId) { 
+
+    function editSessionName(sessionId) {
         const session = sessions.find(s => s.id === sessionId);
         if (!session) return;
         let newName = prompt('请输入新的会话名称', session.name);
         if (newName && newName.trim() !== '') {
             newName = newName.trim();
-            if (sessions.some(s => s.id !== sessionId && s.name === newName)) { alert('名称已存在'); return; }
+            if (sessions.some(s => s.id !== sessionId && s.name === newName)) {
+                alert('名称已存在');
+                return;
+            }
             session.name = newName;
             saveSessionsToLocal();
-            renderSessionPanel();
-            if (currentSessionId === sessionId) updateSessionNameDisplay();
+            renderSessionTabs();
+            if (currentSessionId === sessionId) {
+                // 不需要额外更新，标签已刷新
+            }
         }
     }
+
     function switchToSession(sessionId) {
         if (currentSessionId === sessionId) return;
         currentSessionId = sessionId;
         saveSessionsToLocal();
         loadCurrentSessionMessages();
-        updateSessionNameDisplay();
-        renderSessionPanel();
+        renderSessionTabs();
     }
+
     function deleteSession(sessionId) {
-        if (sessions.length === 1) { alert('至少保留一个会话'); return; }
+        if (sessions.length === 1) {
+            alert('至少保留一个会话');
+            return;
+        }
         const index = sessions.findIndex(s => s.id === sessionId);
         if (index !== -1) {
-            sessions.splice(index,1);
-            if (currentSessionId === sessionId) currentSessionId = sessions[0].id;
+            sessions.splice(index, 1);
+            if (currentSessionId === sessionId) {
+                currentSessionId = sessions[0].id;
+            }
             saveSessionsToLocal();
             loadCurrentSessionMessages();
-            updateSessionNameDisplay();
-            renderSessionPanel();
+            renderSessionTabs();
         }
     }
+
     function createNewSession() {
         const newName = getNextSessionName();
         const newSession = {
@@ -1013,14 +945,9 @@
         currentSessionId = newSession.id;
         saveSessionsToLocal();
         loadCurrentSessionMessages();
-        updateSessionNameDisplay();
-        renderSessionPanel();
-        sessionPanel.classList.remove('show');
+        renderSessionTabs();
     }
-    function updateSessionNameDisplay() {
-        const session = getCurrentSession();
-        if (session) currentSessionNameSpan.textContent = session.name;
-    }
+
     function modifyApiKey() {
         const newKey = prompt('请输入新的 DeepSeek API Key (sk-...)', apiKey);
         if (newKey !== null) {
@@ -1036,11 +963,16 @@
         }
     }
 
-    // 构建历史消息（限制上下文）
+    // 构建历史消息
     function buildLimitedHistory(sessionMessages, maxMessages) {
         let limited = [...sessionMessages];
         if (limited.length > maxMessages) limited = limited.slice(-maxMessages);
         return limited;
+    }
+
+    function getEffectiveSystemPrompt() {
+        if (systemPromptEnabled && systemPrompt.trim() !== "") return systemPrompt;
+        return "你是一个有用的智能助手，请用中文回答用户的问题。";
     }
 
     // 非流式调用
@@ -1050,7 +982,7 @@
         const allHistory = session.messages.filter(msg => msg.role !== 'system');
         const limitedHistory = buildLimitedHistory(allHistory, contextLimit);
         const messages = [
-            { role: 'system', content: '你是一个有用的智能助手，请用中文回答用户的问题。' },
+            { role: 'system', content: getEffectiveSystemPrompt() },
             ...limitedHistory,
             { role: 'user', content: userQuestion }
         ];
@@ -1058,7 +990,7 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
             body: JSON.stringify({
-                model: 'deepseek-chat',
+                model: selectedModel,
                 messages: messages,
                 stream: false,
                 temperature: temperature,
@@ -1085,7 +1017,7 @@
         const allHistory = session.messages.filter(msg => msg.role !== 'system');
         const limitedHistory = buildLimitedHistory(allHistory, contextLimit);
         const messages = [
-            { role: 'system', content: '你是一个有用的智能助手，请用中文回答用户的问题。' },
+            { role: 'system', content: getEffectiveSystemPrompt() },
             ...limitedHistory,
             { role: 'user', content: userQuestion }
         ];
@@ -1093,7 +1025,7 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
             body: JSON.stringify({
-                model: 'deepseek-chat',
+                model: selectedModel,
                 messages: messages,
                 stream: true,
                 temperature: temperature,
@@ -1136,7 +1068,7 @@
         onFinish(fullContent, tokenCount);
     }
 
-    // 发送消息主流程（支持流式/非流式）
+    // 发送消息
     async function sendMessage() {
         if (isLoading) return;
         const question = userInput.value.trim();
@@ -1149,17 +1081,14 @@
         userInput.value = '';
         userInput.style.height = 'auto';
 
-        // 添加用户消息（带时间戳，无token）
         addMessageToCurrentSession('user', question, null);
 
         if (streamEnabled) {
-            // 流式模式：创建一个临时的AI消息占位，逐步更新内容
             const session = getCurrentSession();
             const timestamp = formatTimestamp();
             const tempMsg = { role: 'assistant', content: '', timestamp: timestamp, tokenCount: null };
             session.messages.push(tempMsg);
             saveSessionsToLocal();
-            // 在DOM中追加一条空白AI消息
             const msgDiv = document.createElement('div');
             msgDiv.className = 'message assistant-message';
             msgDiv.setAttribute('data-timestamp', timestamp);
@@ -1181,10 +1110,8 @@
             try {
                 await callDeepSeekAPIStream(question, (partialContent) => {
                     bubbleDiv.innerText = partialContent;
-                    // 实时更新字数统计
                     if (showWordCount) {
-                        const count = getWordCount(partialContent);
-                        metaDiv.innerText = `📝 ${count} 字`;
+                        metaDiv.innerText = `📝 ${getWordCount(partialContent)} 字`;
                         if (showTimestamp) metaDiv.innerText += ` · 🕒 ${timestamp}`;
                     } else if (showTimestamp) {
                         metaDiv.innerText = `🕒 ${timestamp}`;
@@ -1195,14 +1122,12 @@
                 }, (finalContent, tokenCnt) => {
                     finalToken = tokenCnt;
                     bubbleDiv.innerText = finalContent;
-                    // 更新存储的消息
                     const idx = session.messages.findIndex(m => m.timestamp === timestamp && m.role === 'assistant' && m.content === '');
                     if (idx !== -1) {
                         session.messages[idx].content = finalContent;
                         session.messages[idx].tokenCount = finalToken;
                         saveSessionsToLocal();
                     }
-                    // 最终元数据
                     const finalMeta = buildMetaElement('assistant', finalContent, timestamp, finalToken);
                     if (finalMeta) {
                         const oldMeta = msgDiv.querySelector('.message-meta');
@@ -1223,7 +1148,6 @@
                 userInput.focus();
             }
         } else {
-            // 非流式模式
             const loadingId = 'loading_' + Date.now();
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'message assistant-message';
@@ -1253,23 +1177,39 @@
         }
     }
 
-    function scrollToBottom() { setTimeout(() => { chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight; }, 50); }
-    function autoResizeTextarea() { userInput.style.height = 'auto'; userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px'; }
-    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, function(m) { if (m==='&') return '&amp;'; if (m==='<') return '&lt;'; if (m==='>') return '&gt;'; return m; }); }
+    function scrollToBottom() { setTimeout(() => chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight, 50); }
+    function autoResizeTextarea() {
+        userInput.style.height = 'auto';
+        userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
+    }
 
     function bindEvents() {
         sendBtn.addEventListener('click', sendMessage);
         userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
         userInput.addEventListener('input', autoResizeTextarea);
-        sessionsBtn.addEventListener('click', () => { sessionPanel.classList.toggle('show'); renderSessionPanel(); });
-        newSessionBtn.addEventListener('click', () => { createNewSession(); sessionPanel.classList.remove('show'); });
         modifyApiKeyBtn.addEventListener('click', modifyApiKey);
         clearChatBtn.addEventListener('click', () => { if (confirm('确定要清空当前会话的所有消息吗？')) clearCurrentSessionMessages(); });
         scrollToBottomBtn.addEventListener('click', scrollToBottom);
         menuBtn.addEventListener('click', openSidebar);
         closeSidebarBtn.addEventListener('click', closeSidebar);
         sidebarOverlay.addEventListener('click', closeSidebar);
-        document.addEventListener('click', (e) => { if (!sessionsBtn.contains(e.target) && !sessionPanel.contains(e.target)) sessionPanel.classList.remove('show'); });
+    }
+
+    function bindParamEvents() {
+        contextLimitRange.addEventListener('input', () => { contextLimit = parseInt(contextLimitRange.value); contextLimitNum.value = contextLimit; saveParams(); });
+        contextLimitNum.addEventListener('change', () => { let val = parseInt(contextLimitNum.value) || 20; val = Math.min(50, Math.max(1, val)); contextLimit = val; contextLimitRange.value = val; saveParams(); });
+        temperatureRange.addEventListener('input', () => { temperature = parseFloat(temperatureRange.value); temperatureNum.value = temperature; saveParams(); });
+        temperatureNum.addEventListener('change', () => { let val = parseFloat(temperatureNum.value) || 0.7; val = Math.min(2, Math.max(0, val)); temperature = val; temperatureRange.value = val; saveParams(); });
+        topPRange.addEventListener('input', () => { topP = parseFloat(topPRange.value); topPNum.value = topP; saveParams(); });
+        topPNum.addEventListener('change', () => { let val = parseFloat(topPNum.value) || 1; val = Math.min(1, Math.max(0, val)); topP = val; topPRange.value = val; saveParams(); });
+        streamToggle.addEventListener('change', () => { streamEnabled = streamToggle.checked; saveParams(); });
+        wordCountToggle.addEventListener('change', () => { showWordCount = wordCountToggle.checked; saveParams(); refreshAllMessagesMeta(); });
+        tokenToggle.addEventListener('change', () => { showToken = tokenToggle.checked; saveParams(); refreshAllMessagesMeta(); });
+        timestampToggle.addEventListener('change', () => { showTimestamp = timestampToggle.checked; saveParams(); refreshAllMessagesMeta(); });
+        assistantNameInput.addEventListener('change', () => updateParamFromUI());
+        modelSelect.addEventListener('change', () => { selectedModel = modelSelect.value; saveParams(); });
+        enableSystemPromptToggle.addEventListener('change', () => { systemPromptEnabled = enableSystemPromptToggle.checked; saveParams(); });
+        systemPromptInput.addEventListener('change', () => { systemPrompt = systemPromptInput.value.trim() || "你是一个有用的智能助手，请用中文回答用户的问题。"; systemPromptInput.value = systemPrompt; saveParams(); });
     }
 
     function init() {
