@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>DeepSeek 多会话助手 - 增强版</title>
+    <title>DeepSeek 多会话助手 - 可自定义助手名称</title>
     <style>
         * {
             box-sizing: border-box;
@@ -230,12 +230,12 @@
             cursor: pointer;
         }
 
-        .number-input {
-            width: 60px;
-            padding: 6px;
+        .number-input, .text-input {
+            width: 100%;
+            padding: 8px 12px;
             border: 1px solid #ced4da;
             border-radius: 8px;
-            text-align: center;
+            font-size: 14px;
         }
 
         .sidebar-overlay {
@@ -502,6 +502,12 @@
             <span>⚙️ 高级参数</span>
             <button id="closeSidebarBtn" class="close-sidebar">✕</button>
         </div>
+        <!-- 自定义助手名称 -->
+        <div class="setting-item">
+            <div class="setting-label">🤖 助手显示名称</div>
+            <input type="text" id="assistantNameInput" class="text-input" placeholder="例如：小助手、AI伙伴" value="DeepSeek">
+            <div style="font-size:12px; color:#6c757d">修改后立即生效，所有历史消息也会更新</div>
+        </div>
         <!-- 原有参数 -->
         <div class="setting-item">
             <div class="setting-label">📝 上下文消息数量上限</div>
@@ -601,6 +607,7 @@
     let showWordCount = false;
     let showToken = false;
     let showTimestamp = false;
+    let assistantName = "DeepSeek";   // 自定义助手名称
 
     // DOM 元素
     const chatMessagesDiv = document.getElementById('chatMessages');
@@ -629,6 +636,7 @@
     const wordCountToggle = document.getElementById('wordCountToggle');
     const tokenToggle = document.getElementById('tokenToggle');
     const timestampToggle = document.getElementById('timestampToggle');
+    const assistantNameInput = document.getElementById('assistantNameInput');
 
     // ---------- 参数加载与保存 ----------
     function loadParams() {
@@ -646,6 +654,12 @@
         if (savedToken !== null) showToken = savedToken === 'true';
         const savedTimestamp = localStorage.getItem('deepseek_show_timestamp');
         if (savedTimestamp !== null) showTimestamp = savedTimestamp === 'true';
+        const savedAssistantName = localStorage.getItem('deepseek_assistant_name');
+        if (savedAssistantName !== null && savedAssistantName.trim() !== '') {
+            assistantName = savedAssistantName;
+        } else {
+            assistantName = "DeepSeek";
+        }
 
         contextLimitRange.value = contextLimit;
         contextLimitNum.value = contextLimit;
@@ -657,6 +671,7 @@
         wordCountToggle.checked = showWordCount;
         tokenToggle.checked = showToken;
         timestampToggle.checked = showTimestamp;
+        assistantNameInput.value = assistantName;
     }
 
     function saveParams() {
@@ -667,6 +682,7 @@
         localStorage.setItem('deepseek_show_wordcount', showWordCount);
         localStorage.setItem('deepseek_show_token', showToken);
         localStorage.setItem('deepseek_show_timestamp', showTimestamp);
+        localStorage.setItem('deepseek_assistant_name', assistantName);
     }
 
     function updateParamFromUI() {
@@ -680,7 +696,29 @@
         showWordCount = wordCountToggle.checked;
         showToken = tokenToggle.checked;
         showTimestamp = timestampToggle.checked;
+        const newName = assistantNameInput.value.trim();
+        if (newName !== "") {
+            assistantName = newName;
+        } else {
+            assistantName = "DeepSeek";
+            assistantNameInput.value = "DeepSeek";
+        }
         saveParams();
+        // 刷新所有消息的角色名称
+        refreshAllMessagesRoleName();
+    }
+
+    // 刷新所有消息的显示角色名（用于助手名称修改后）
+    function refreshAllMessagesRoleName() {
+        const messages = document.querySelectorAll('.message');
+        messages.forEach(msgEl => {
+            const roleDiv = msgEl.querySelector('.message-role');
+            if (!roleDiv) return;
+            const isAssistant = msgEl.classList.contains('assistant-message');
+            if (isAssistant) {
+                roleDiv.innerText = assistantName;
+            }
+        });
     }
 
     function bindParamEvents() {
@@ -730,7 +768,6 @@
         wordCountToggle.addEventListener('change', () => {
             showWordCount = wordCountToggle.checked;
             saveParams();
-            // 刷新所有消息的元数据显示
             refreshAllMessagesMeta();
         });
         tokenToggle.addEventListener('change', () => {
@@ -743,6 +780,9 @@
             saveParams();
             refreshAllMessagesMeta();
         });
+        assistantNameInput.addEventListener('change', () => {
+            updateParamFromUI();
+        });
     }
 
     // 刷新所有消息的元数据（用于开关切换后）
@@ -754,7 +794,6 @@
             const content = bubble.innerText;
             const timestamp = msgEl.getAttribute('data-timestamp');
             const tokenCount = msgEl.getAttribute('data-token-count');
-            // 重新构建meta区域
             let metaDiv = msgEl.querySelector('.message-meta');
             if (metaDiv) metaDiv.remove();
             metaDiv = buildMetaElement(role, content, timestamp, tokenCount);
@@ -833,7 +872,7 @@
             id: generateId(),
             name: '对话1',
             messages: [
-                { role: 'assistant', content: '你好！我是 DeepSeek 智能助手，有什么可以帮你的吗？', timestamp: formatTimestamp(), tokenCount: null }
+                { role: 'assistant', content: '你好！我是 ' + assistantName + ' 智能助手，有什么可以帮你的吗？', timestamp: formatTimestamp(), tokenCount: null }
             ]
         };
         sessions = [defaultSession];
@@ -863,7 +902,7 @@
         msgDiv.className = `message ${role === 'user' ? 'user-message' : 'assistant-message'}`;
         if (timestamp) msgDiv.setAttribute('data-timestamp', timestamp);
         if (tokenCount) msgDiv.setAttribute('data-token-count', tokenCount);
-        const roleName = role === 'user' ? '你' : 'DeepSeek';
+        const roleName = role === 'user' ? '你' : assistantName;
         const bubbleDiv = document.createElement('div');
         bubbleDiv.className = 'message-bubble';
         bubbleDiv.innerText = content;
@@ -893,14 +932,14 @@
         const session = getCurrentSession();
         if (session) {
             session.messages = [
-                { role: 'assistant', content: '你好！我是 DeepSeek 智能助手，有什么可以帮你的吗？', timestamp: formatTimestamp(), tokenCount: null }
+                { role: 'assistant', content: '你好！我是 ' + assistantName + ' 智能助手，有什么可以帮你的吗？', timestamp: formatTimestamp(), tokenCount: null }
             ];
             saveSessionsToLocal();
             loadCurrentSessionMessages();
         }
     }
 
-    function renderSessionPanel() { /* 同前，略，保持原有逻辑 */ 
+    function renderSessionPanel() { 
         sessionPanel.innerHTML = '';
         sessions.forEach(session => {
             const item = document.createElement('div');
@@ -928,7 +967,7 @@
             sessionPanel.appendChild(item);
         });
     }
-    function editSessionName(sessionId) { /* 同前 */ 
+    function editSessionName(sessionId) { 
         const session = sessions.find(s => s.id === sessionId);
         if (!session) return;
         let newName = prompt('请输入新的会话名称', session.name);
@@ -967,7 +1006,7 @@
             id: generateId(),
             name: newName,
             messages: [
-                { role: 'assistant', content: '你好！我是 DeepSeek 智能助手，有什么可以帮你的吗？', timestamp: formatTimestamp(), tokenCount: null }
+                { role: 'assistant', content: '你好！我是 ' + assistantName + ' 智能助手，有什么可以帮你的吗？', timestamp: formatTimestamp(), tokenCount: null }
             ]
         };
         sessions.push(newSession);
@@ -1126,7 +1165,7 @@
             msgDiv.setAttribute('data-timestamp', timestamp);
             const roleDiv = document.createElement('div');
             roleDiv.className = 'message-role';
-            roleDiv.innerText = 'DeepSeek';
+            roleDiv.innerText = assistantName;
             const bubbleDiv = document.createElement('div');
             bubbleDiv.className = 'message-bubble';
             bubbleDiv.innerText = '';
@@ -1189,7 +1228,7 @@
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'message assistant-message';
             loadingDiv.id = loadingId;
-            loadingDiv.innerHTML = `<div class="message-role">DeepSeek</div><div class="loading-indicator"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span>正在思考中...</span></div>`;
+            loadingDiv.innerHTML = `<div class="message-role">${assistantName}</div><div class="loading-indicator"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span>正在思考中...</span></div>`;
             chatMessagesDiv.appendChild(loadingDiv);
             scrollToBottom();
             try {
